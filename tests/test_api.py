@@ -1,8 +1,9 @@
 """Pruebas de los endpoints web del analizador."""
 
+import base64
 from io import BytesIO
-from pathlib import Path
 
+import numpy as np
 from fastapi.testclient import TestClient
 from PIL import Image, ImageDraw
 
@@ -36,11 +37,24 @@ def test_health_and_frontend_are_available() -> None:
     assert "Herbario visual" in client.get("/").text
 
 
-def test_analyze_upload_saves_named_stages(
-    tmp_path: Path, monkeypatch
-) -> None:
-    """Devuelve las cinco etapas y guarda sus archivos PNG descriptivos."""
-    monkeypatch.setattr(api, "RESULTS_DIR", tmp_path)
+def test_preview_is_small_and_preserves_binary_mask() -> None:
+    """Reduce vistas RGB y conserva las mascaras en PNG sin perdida."""
+    rgb_image = np.zeros((1200, 900, 3), dtype=np.uint8)
+    rgb_url, rgb_extension = api.encode_preview(rgb_image, "original")
+    rgb_bytes = base64.b64decode(rgb_url.split(",", maxsplit=1)[1])
+
+    mask = np.zeros((1200, 900), dtype=np.uint8)
+    mask_url, mask_extension = api.encode_preview(mask, "mascara_hsv")
+    mask_bytes = base64.b64decode(mask_url.split(",", maxsplit=1)[1])
+
+    assert rgb_extension == "jpg"
+    assert Image.open(BytesIO(rgb_bytes)).size == (480, 640)
+    assert mask_extension == "png"
+    assert Image.open(BytesIO(mask_bytes)).size == (480, 640)
+
+
+def test_analyze_upload_returns_named_stage_previews() -> None:
+    """Devuelve etapas compactas con nombres adecuados para descarga."""
     client = TestClient(api.app)
 
     response = client.post(
@@ -64,7 +78,14 @@ def test_analyze_upload_saves_named_stages(
         "contorno",
         "hoja_aislada",
     ]
-    assert len(list(tmp_path.rglob("*.png"))) == 5
+    assert [stage["filename"] for stage in result["stages"]] == [
+        "hoja_original.jpg",
+        "hoja_mascara_hsv.png",
+        "hoja_mascara_limpia.png",
+        "hoja_contorno.jpg",
+        "hoja_hoja_aislada.jpg",
+    ]
+    assert all(stage["image"].startswith("data:image/") for stage in result["stages"])
 
 
 def test_analyze_reports_an_image_without_leaf() -> None:

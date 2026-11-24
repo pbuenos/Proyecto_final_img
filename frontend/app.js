@@ -5,6 +5,7 @@ const selectedFiles = document.querySelector("#selected-files");
 const message = document.querySelector("#form-message");
 const results = document.querySelector("#result-list");
 const resultCount = document.querySelector("#result-count");
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 const sliders = [
   ["hue-min", "hue-min-value", value => value],
@@ -25,9 +26,10 @@ sliders.forEach(([inputId, outputId, format]) => {
 
 input.addEventListener("change", () => {
   const names = Array.from(input.files, file => file.name);
+  const totalSize = Array.from(input.files).reduce((sum, file) => sum + file.size, 0);
   selectedFiles.textContent = names.length
-    ? `${names.length} archivo(s): ${names.join(", ")}`
-    : "Todavia no seleccionaste imagenes";
+    ? `${names.length} archivo(s): ${names.join(", ")} (${(totalSize / (1024 * 1024)).toFixed(1)} MB)`
+    : "Todavia no seleccionaste imagenes · maximo 10 MB en total";
 });
 
 document.querySelector("#dropzone").addEventListener("dragover", event => {
@@ -112,7 +114,7 @@ function createResultCard(item) {
     caption.textContent = stage.label;
     download.href = stage.image;
     download.download = stage.filename;
-    download.textContent = "Guardar PNG";
+    download.textContent = "Descargar";
     figure.append(image, caption, download);
     stages.append(figure);
   });
@@ -124,6 +126,11 @@ form.addEventListener("submit", async event => {
   event.preventDefault();
   if (!input.files.length) {
     message.textContent = "Selecciona al menos una imagen.";
+    return;
+  }
+  const totalSize = Array.from(input.files).reduce((sum, file) => sum + file.size, 0);
+  if (totalSize > MAX_UPLOAD_BYTES) {
+    message.textContent = "El total de las imagenes no puede superar los 10 MB.";
     return;
   }
   const formData = new FormData(form);

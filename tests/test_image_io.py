@@ -1,5 +1,6 @@
 """Pruebas de carga y guardado de imagenes."""
 
+from io import BytesIO
 from pathlib import Path
 
 import pytest
@@ -17,8 +18,6 @@ from backend.leaflab.image_io import (
 def test_load_image_converts_to_rgb() -> None:
     """Normaliza imagenes de entrada al formato RGB usado por el pipeline."""
     image = Image.new("L", (20, 10), 120)
-    from io import BytesIO
-
     buffer = BytesIO()
     image.save(buffer, format="PNG")
 
@@ -32,6 +31,16 @@ def test_load_image_rejects_invalid_bytes() -> None:
     """Convierte errores de Pillow en una excepcion de entrada entendible."""
     with pytest.raises(InvalidImageError, match="imagen valida"):
         load_image(b"no es una imagen")
+
+
+def test_load_image_enforces_optional_pixel_limit() -> None:
+    """Rechaza resoluciones excesivas en API sin restringir el flujo CLI."""
+    image = Image.new("RGB", (20, 10), (120, 120, 120))
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+
+    with pytest.raises(InvalidImageError, match="pixeles"):
+        load_image(buffer.getvalue(), max_pixels=100)
 
 
 def test_safe_stem_removes_paths_and_unsafe_characters() -> None:

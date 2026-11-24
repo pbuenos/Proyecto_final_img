@@ -12,11 +12,12 @@ class InvalidImageError(ValueError):
     """Indica que los bytes o la ruta no contienen una imagen legible."""
 
 
-def load_image(source: bytes | Path) -> Image.Image:
+def load_image(source: bytes | Path, max_pixels: int | None = None) -> Image.Image:
     """Abre una imagen y la devuelve orientada y convertida a RGB.
 
     Args:
         source: Bytes de una carga web o ruta de archivo local.
+        max_pixels: Maximo de pixeles permitido; None deja el tamano sin limitar.
 
     Returns:
         Imagen Pillow en modo RGB con la orientacion EXIF aplicada.
@@ -26,9 +27,20 @@ def load_image(source: bytes | Path) -> Image.Image:
     """
     try:
         image_source = Image.open(BytesIO(source) if isinstance(source, bytes) else source)
+        if max_pixels is not None and image_source.width * image_source.height > max_pixels:
+            raise InvalidImageError(
+                f"La imagen supera el maximo permitido de {max_pixels:,} pixeles."
+            )
         image_source.load()
         return ImageOps.exif_transpose(image_source).convert("RGB")
-    except (UnidentifiedImageError, OSError, ValueError) as error:
+    except InvalidImageError:
+        raise
+    except (
+        UnidentifiedImageError,
+        OSError,
+        ValueError,
+        Image.DecompressionBombError,
+    ) as error:
         raise InvalidImageError("El archivo no contiene una imagen valida.") from error
 
 

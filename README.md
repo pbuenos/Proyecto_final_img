@@ -30,7 +30,7 @@ python main.py fotos\hoja1.jpg --salida resultados --hue-min 25 --hue-max 100 --
 python main.py --help
 ```
 
-Cada imagen genera una subcarpeta en `resultados/`, con archivos como `hoja1_mascara_hsv.png`, `hoja1_mascara_limpia.png`, `hoja1_contorno.png` y `hoja1_hoja_aislada.png`. El directorio `backend/storage/results/` contiene las salidas de la aplicacion web.
+Cada imagen procesada por CLI genera una subcarpeta en `resultados/`, con archivos como `hoja1_mascara_hsv.png`, `hoja1_mascara_limpia.png`, `hoja1_contorno.png` y `hoja1_hoja_aislada.png`. En la web, las etapas se devuelven como vistas previas descargables (maximo 640 px por lado); el servidor no intenta guardarlas en disco, porque el almacenamiento de una funcion serverless no es persistente.
 
 ## Tecnicas y efecto
 
@@ -45,18 +45,25 @@ Pillow se ocupa de decodificar, orientar segun EXIF, convertir a RGB y escribir 
 
 El analisis inicial esta pensado para una hoja verde sobre un fondo simple que contraste y con iluminacion pareja. Un fondo verde puede confundirse con la hoja, y una hoja amarilla o seca puede quedar fuera del rango. Ajusta los controles HSV y compara las etapas; no interpretes pixeles como centimetros sin incluir una referencia de escala en la foto.
 
-El proyecto incluye una imagen sintetica en `samples/` para verificar el flujo de forma reproducible. Para la presentacion, agreguen fotos propias de hojas con distintos fondos y comparen resultados. Las imagenes generadas se guardan en `results/` (CLI) o `backend/storage/results/` (web).
+El proyecto incluye una imagen sintetica en `samples/` para verificar el flujo de forma reproducible. Para la presentacion, agreguen fotos propias de hojas con distintos fondos y comparen resultados. El CLI guarda las imagenes completas en `results/`; en la web, cada etapa puede descargarse desde el navegador.
 
 ## Pruebas
 
 ```powershell
+python -m pip install -r requirements-dev.txt
 python -m pytest -q
 ```
+
+## Publicar en Vercel
+
+El proyecto incluye `.python-version` (Python 3.12) y `pyproject.toml` con la entrada FastAPI `backend.app.main:app`. Vercel detecta FastAPI y sirve los archivos estaticos del frontend desde `frontend/`.
+
+1. Importa el repositorio `Proyecto_final_img` desde GitHub. Esta carpeta ya es la raiz del proyecto, asi que deja **Root Directory** en `./`; si la subis a otro repo dentro de una subcarpeta, selecciona esa carpeta como raiz.
+2. En Vercel, importa ese repositorio y deja que detecte el proyecto Python/FastAPI. No hace falta configurar un comando de build ni variables secretas.
+3. Despues del deploy, abre la URL y carga desde tu computadora `samples/hoja_sintetica.png`; luego prueba con fotos reales.
+
+La interfaz web limita las imagenes a 10 MB en total y 25 megapixeles por foto, y devuelve vistas previas comprimidas para no depender de escribir archivos en el disco efimero de Vercel. El modo CLI sigue guardando resultados de resolucion completa en la computadora local; no se ejecuta en Vercel.
 
 ## Integrantes
 
 - Completar con los nombres del equipo.
-
-## Conversaciones con IA
-
-Guardar en `conversaciones_ia/` la exportacion completa de las conversaciones usadas para disenar y desarrollar el TP (con los prompts y las respuestas). No completar esta carpeta con una transcripcion parcial presentada como si fuera completa.
