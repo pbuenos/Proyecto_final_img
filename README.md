@@ -2,6 +2,25 @@
 
 Aplicacion web para analizar fotos de hojas y una interfaz de linea de comandos para procesar imagenes locales. Usa Pillow para abrir/guardar archivos y OpenCV/NumPy para segmentar y medir.
 
+## Datos de la cursada
+
+- **Materia:** Procesamiento de Imágenes
+- **Año y cuatrimestre:** 3.er año, 1.er cuatrimestre de 2026
+- **Estudiante:** Pedro Bueno Pereyra
+- **Docente:** Juan Ignacio Bonini
+
+## Motivación
+
+Nos motivó aplicar técnicas de procesamiento de imágenes a un objeto cotidiano y poder observar el efecto de cada etapa sobre una foto real. Elegimos las hojas porque su color y su forma permiten probar segmentación, operaciones morfológicas y detección de contornos, y luego comparar medidas aproximadas entre ejemplares.
+
+## Problemáticas encontradas y soluciones
+
+- **La segmentación por color cambia según la iluminación y el fondo.** Usamos umbrales HSV ajustables y mostramos la máscara para poder observar qué píxeles selecciona y corregir los valores. Las pruebas más claras son con una hoja verde, fondo contrastante y luz pareja.
+- **La máscara puede quedar con puntos aislados o pequeños huecos.** Aplicamos apertura para quitar ruido y cierre para completar huecos; el tamaño del kernel se puede ajustar.
+- **La foto no permite obtener medidas físicas por sí sola.** El área, el perímetro y las dimensiones se informan en píxeles; para estimar centímetros habría que incluir una referencia de escala en la imagen.
+- **Vercel no ofrece almacenamiento persistente para los archivos generados por una función.** La web devuelve vistas previas comprimidas que se pueden descargar desde el navegador; el CLI local guarda las etapas completas en disco.
+- **El primer despliegue no encontraba la aplicación ni sus dependencias.** Indicamos la entrada FastAPI en `pyproject.toml` y declaramos allí las dependencias de ejecución para que Vercel pueda cargar el backend.
+
 ## Requisitos
 
 - Python 3.10 o superior
@@ -58,12 +77,12 @@ python -m pytest -q
 
 El proyecto incluye `.python-version` (Python 3.12) y `pyproject.toml` con la entrada FastAPI `backend.app.main:app`. Vercel detecta FastAPI y sirve los archivos estaticos del frontend desde `frontend/`.
 
-1. Importa el repositorio `Proyecto_final_img` desde GitHub. Esta carpeta ya es la raiz del proyecto, asi que deja **Root Directory** en `./`; si la subis a otro repo dentro de una subcarpeta, selecciona esa carpeta como raiz.
-2. En Vercel, importa ese repositorio y deja que detecte el proyecto Python/FastAPI. No hace falta configurar un comando de build ni variables secretas.
-3. Despues del deploy, abre la URL y carga desde tu computadora `samples/hoja_sintetica.png`; luego prueba con fotos reales.
+1. Conecta en Vercel el repositorio de GitHub que contiene este proyecto y deja **Root Directory** en `./`. Si el proyecto está dentro de una subcarpeta, selecciona esa carpeta como raíz.
+2. Deja que Vercel detecte el proyecto Python/FastAPI. No hace falta configurar variables secretas.
+3. Después del deploy, abre la URL, carga desde tu computadora `samples/hoja_sintetica.png` y luego prueba con fotos reales.
 
 La interfaz web limita las imagenes a 10 MB en total y 25 megapixeles por foto, y devuelve vistas previas comprimidas para no depender de escribir archivos en el disco efimero de Vercel. El modo CLI sigue guardando resultados de resolucion completa en la computadora local; no se ejecuta en Vercel.
 
 ## Integrantes
 
-- Completar con los nombres del equipo.
+- Pedro Bueno Pereyra
